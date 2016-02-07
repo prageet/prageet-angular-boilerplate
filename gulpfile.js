@@ -8,8 +8,19 @@ var uglify = require('gulp-uglify');
 var minifyCSS = require('gulp-minify-css');
 var clean = require('gulp-clean');
 var runSequence = require('run-sequence');
+var browserify = require('gulp-browserify');
+var concat = require('gulp-concat');
 
 // tasks
+gulp.task('browserify', function() {
+  gulp.src(['app/js/main.js'])
+  .pipe(browserify({
+    insertGlobals: true,
+    debug: true
+  }))
+  .pipe(concat('bundled.js'))
+  .pipe(gulp.dest('./app/js'))
+});
 gulp.task('lint', function() {
   gulp.src(['./app/**/*.js', '!./app/bower_components/**'])
     .pipe(jshint())
@@ -18,6 +29,8 @@ gulp.task('lint', function() {
 });
 gulp.task('clean', function() {
     gulp.src('./dist/*')
+      .pipe(clean({force: true}));
+    gulp.src('./app/js/bundled.js')
       .pipe(clean({force: true}));
 });
 gulp.task('minify-css', function() {
@@ -33,6 +46,15 @@ gulp.task('minify-js', function() {
       // outSourceMap: "app.js.map"
     }))
     .pipe(gulp.dest('./dist/'))
+});
+gulp.task('browserifyDist', function() {
+  gulp.src(['app/js/main.js'])
+  .pipe(browserify({
+    insertGlobals: true,
+    debug: true
+  }))
+  .pipe(concat('bundled.js'))
+  .pipe(gulp.dest('./dist/js'))
 });
 gulp.task('copy-bower-components', function () {
   gulp.src('./app/bower_components/**')
@@ -58,11 +80,12 @@ gulp.task('connectDist', function () {
 
 // default task
 gulp.task('default',
-  ['lint', 'connect']
+  ['lint', 'browserify', 'connect']
 );
+// build task
 gulp.task('build', function() {
   runSequence(
     ['clean'],
-    ['lint', 'minify-css', 'minify-js', 'copy-html-files', 'copy-bower-components', 'connectDist']
+    ['lint', 'minify-css', 'browserifyDist', 'copy-html-files', 'copy-bower-components', 'connectDist']
   );
 });
